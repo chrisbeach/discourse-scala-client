@@ -37,7 +37,7 @@ trait Topics {
 
   private def orderParam(maybeOrder: Option[Topic.Order]) =
     maybeOrder match {
-      case Some(Created) => Map("order" -> "created")
+      case Some(order) => Map("order" -> order.queryStringValue)
       case None => Map.empty[String, String]
     }
 }

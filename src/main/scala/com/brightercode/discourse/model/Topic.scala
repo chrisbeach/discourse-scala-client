@@ -16,8 +16,16 @@ object Topic {
         (JsPath \ "topic_post_bookmarked").read[Boolean]
     )(Topic.apply _)
 
-  sealed trait Order
-  case object Created extends Order
+  sealed abstract class Order(val queryStringValue: String)
+  case object Default extends Order("default")
+  case object Created extends Order("created")
+  case object Activity extends Order("activity")
+  case object Views extends Order("views")
+  case object Posts extends Order("posts")
+  case object Category extends Order("category")
+  case object Likes extends Order("likes")
+  case object OpLikes extends Order("op_likes")
+  case object Posters extends Order("posters")
 }
 
 case class Topic(id: Int,
