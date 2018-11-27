@@ -27,4 +27,16 @@ object DiscourseForumApiClient {
       "api_key" -> apiKey,
       "api_username" -> username,
     )
+
+  def withForum[T](urlBase: String,
+                   apiKey: String,
+                   username: String)
+                  (operation: DiscourseForumApiClient => T): T = {
+    val forum = new DiscourseForumApiClient(urlBase, apiKey, username)
+    try {
+      operation(forum)
+    } finally {
+      forum.shutdown()
+    }
+  }
 }
