@@ -9,10 +9,9 @@ import play.api.libs.ws.StandaloneWSRequest
 
 import scala.concurrent.Future
 
-trait Posts {
-  self: DiscourseForumApiClient =>
+class PostApi(api: DiscourseForumApiClient) {
 
-  def createPost(post: Post): Future[StandaloneWSRequest#Self#Response] =
-    url("posts.json")
+  def create(post: Post): Future[StandaloneWSRequest#Self#Response] =
+    api.url("posts.json")
       .post(toJson(post))
 }

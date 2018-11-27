@@ -2,22 +2,21 @@ package com.brightercode.discourse.api
 
 import com.brightercode.discourse.DiscourseForumApiClient
 import com.brightercode.discourse.model.Topic
-import com.brightercode.discourse.model.Topic.{Created, Order}
+import com.brightercode.discourse.model.Topic.Order
+import play.api.libs.json.{JsArray, JsDefined, JsValue, Json}
 import play.api.libs.ws.JsonBodyReadables._
 import play.api.libs.ws.JsonBodyWritables._
-import play.api.libs.json.{JsArray, JsDefined, JsValue, Json}
 import play.api.libs.ws.StandaloneWSRequest
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-trait Topics {
-  self: DiscourseForumApiClient =>
+class TopicApi(api: DiscourseForumApiClient) {
 
-  def latestTopics(categorySlug: String,
-                   page: Int = 0,
-                   order: Option[Order] = None): Future[Seq[Topic]] =
-    url(s"c/$categorySlug.json", extraQueryParams = orderParam(order))
+  def list(categorySlug: String,
+           page: Int = 0,
+           order: Option[Order] = None): Future[Seq[Topic]] =
+    api.url(s"c/$categorySlug.json", extraQueryParams = orderParam(order))
       .get()
       .map(_.body[JsValue]).map { json =>
         json \ "topic_list" \ "topics" match {
@@ -26,14 +25,15 @@ trait Topics {
         }
       }
 
-  def topic(id: Int): Future[Topic] =
-    url(s"t/$id.json")
+  def get(id: Int): Future[Topic] =
+    api.url(s"t/$id.json")
       .get()
       .map { _.body[JsValue].validate[Topic].get }
 
-  def bookmarkTopic(topicId: Int): Future[StandaloneWSRequest#Self#Response] =
-    url(s"t/$topicId/bookmarkTopic")
+  def bookmark(topicId: Int): Future[StandaloneWSRequest#Self#Response] =
+    api.url(s"t/$topicId/bookmark")
       .put(Json.obj())
+
 
   private def orderParam(maybeOrder: Option[Topic.Order]) =
     maybeOrder match {

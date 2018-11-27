@@ -8,16 +8,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.Future
 
-trait Categories {
-  self: DiscourseForumApiClient =>
+class CategoryApi(api: DiscourseForumApiClient) {
 
-  def categories(): Future[Seq[Category]] =
-    url(s"categories.json")
+  def list(): Future[Seq[Category]] =
+    api.url(s"categories.json")
       .get()
-      .map( _.body[JsValue] \ "category_list" \ "categories" match {
+      .map( _.body[JsValue] \ "category_list" \ "list" match {
         case JsDefined(array: JsArray) => array.value.map { _.validate[Category].get }
-        case undefined: JsUndefined => sys.error(s"Couldn't read categories: ${undefined.error} ${undefined.validationError}")
-        case _ => sys.error(s"Couldn't read categories")
+        case undefined: JsUndefined => sys.error(s"Couldn't read list: ${undefined.error} ${undefined.validationError}")
+        case _ => sys.error(s"Couldn't read list")
       }
     )
 }
