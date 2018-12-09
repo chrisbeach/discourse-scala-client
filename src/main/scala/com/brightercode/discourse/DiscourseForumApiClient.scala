@@ -1,20 +1,19 @@
 package com.brightercode.discourse
 
-import com.brightercode.discourse.api.{CategoryApi, PostApi, TopicApi}
+import com.brightercode.discourse.DiscourseForumApiClient.queryStringParams
+import com.brightercode.discourse.methods.{CategoryApi, PostApi, TopicApi}
 import com.brightercode.discourse.util.PlayWebServiceClient
-import DiscourseForumApiClient.queryStringParams
+
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Partial implementation of Discourse forum API
   *
   * @see https://docs.discourse.org/
   *
-  * @param urlBase e.g. https://se23.life
-  * @param apiKey see https://[your forum]/admin/api/keys
-  * @param username to act as
   */
-class DiscourseForumApiClient(urlBase: String, apiKey: String, username: String)
-  extends PlayWebServiceClient(urlBase, queryStringParams(apiKey, username)) {
+class DiscourseForumApiClient private (config: DiscourseEndpointConfig)
+  extends PlayWebServiceClient(config.baseUrl, queryStringParams(config.key, config.username)) {
 
   val topics = new TopicApi(this)
   val posts = new PostApi(this)
@@ -28,15 +27,26 @@ object DiscourseForumApiClient {
       "api_username" -> username,
     )
 
-  def withForum[T](urlBase: String,
-                   apiKey: String,
-                   username: String)
+  /**
+    * Provide a forum to caller and ensure it is shutdown when the caller finishes execution
+    */
+  def withForum[T](config: DiscourseEndpointConfig)
                   (operation: DiscourseForumApiClient => T): T = {
-    val forum = new DiscourseForumApiClient(urlBase, apiKey, username)
+    val forum = new DiscourseForumApiClient(config)
     try {
       operation(forum)
     } finally {
       forum.shutdown()
     }
   }
+}
+
+
+/**
+  * @param baseUrl e.g. https://se23.life
+  * @param username to act as
+  * @param key see https://[your forum]/admin/api/keys
+  */
+case class DiscourseEndpointConfig(baseUrl: String, username: String, key: String, timeout: FiniteDuration) {
+  require(baseUrl != "https://your.discourse.forum", "Please customise application.conf before running")
 }
