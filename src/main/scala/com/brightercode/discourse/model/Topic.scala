@@ -1,35 +1,59 @@
 package com.brightercode.discourse.model
 
 import play.api.libs.functional.syntax._
-import play.api.libs.json.{JsPath, Reads}
+import play.api.libs.json.{JsPath, Json, Reads, Writes}
 
 object SparseTopic {
   implicit val topicReads: Reads[SparseTopic] = (
-    (JsPath \ "id").read[Int] and
+    (JsPath \ "id").readNullable[Int] and
     (JsPath \ "title").read[String] and
-    (JsPath \ "pinned").read[Boolean] and
+    (JsPath \ "pinned").readNullableWithDefault[Boolean](None) and
     (JsPath \ "posts_count").read[Int] and
     (JsPath \ "reply_count").read[Int] and
-    (JsPath \ "views").read[Int] and
+    (JsPath \ "views").readNullableWithDefault[Int](None) and
     (JsPath \ "posters" \ 0 \ "user_id").read[Int] and
     (JsPath \ "topic_post_bookmarked").read[Boolean]
   )(SparseTopic.apply _)
 }
 
-case class SparseTopic(id: Int,
+case class TopicTemplate(title: String,
+                         raw: String,
+                         categoryId: Int)
+
+object TopicTemplate {
+  implicit val topicTemplateWrites: Writes[TopicTemplate] = (topic: TopicTemplate) =>
+    Json.obj(
+      "title" -> topic.title,
+      "raw" -> topic.raw,
+      "category" -> topic.categoryId
+    )
+}
+
+case class CreatedPost(id: Int, cooked: String, userId: Int, topicId: Int)
+
+object CreatedPost {
+  implicit val createdPostReads: Reads[CreatedPost] = (
+    (JsPath \ "id").read[Int] and
+      (JsPath \ "cooked").read[String] and
+      (JsPath \ "user_id").read[Int] and
+      (JsPath \ "topic_id").read[Int]
+    )(CreatedPost.apply _)
+}
+
+case class SparseTopic(id: Option[Int] = None,
                        title: String,
-                       pinned: Boolean,
+                       pinned: Option[Boolean] = None,
                        postCount: Int,
                        replyCount: Int,
-                       views: Int,
+                       views: Option[Int] = None,
                        authorUserId: Int,
                        topicPostBookmarked: Boolean) {
   override def toString: String = s"'$title' (id=$id, author=$authorUserId)"
 }
 
-case class Topic(id: Int,
+case class Topic(id: Option[Int] = None,
                  title: String,
-                 pinned: Boolean,
+                 pinned: Boolean = false,
                  postCount: Int,
                  replyCount: Int,
                  views: Int,
@@ -39,16 +63,17 @@ case class Topic(id: Int,
 }
 
 object Topic {
-  def from(sparseTopic: SparseTopic, userLookup: Int => User) = Topic(
-    sparseTopic.id,
-    sparseTopic.title,
-    sparseTopic.pinned,
-    sparseTopic.postCount,
-    sparseTopic.replyCount,
-    sparseTopic.views,
-    userLookup(sparseTopic.authorUserId),
-    sparseTopic.topicPostBookmarked
-  )
+  def from(sparseTopic: SparseTopic, userLookup: Int => User) =
+    Topic(
+      sparseTopic.id,
+      sparseTopic.title,
+      sparseTopic.pinned.getOrElse(false),
+      sparseTopic.postCount,
+      sparseTopic.replyCount,
+      sparseTopic.views.getOrElse(0),
+      userLookup(sparseTopic.authorUserId),
+      sparseTopic.topicPostBookmarked
+    )
 
   sealed abstract class Order(val queryStringValue: String)
   case object Default extends Order("default")

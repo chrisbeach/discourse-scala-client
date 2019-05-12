@@ -30,8 +30,8 @@ object DiscourseForumApiClient {
   /**
     * Provide a forum to caller and ensure it is shutdown when the caller finishes execution
     */
-  def withForum[T](config: DiscourseEndpointConfig)
-                  (operation: DiscourseForumApiClient => T): T = {
+  def withDiscourseForum[T](config: DiscourseEndpointConfig)
+                           (operation: DiscourseForumApiClient => T): T = {
     val forum = new DiscourseForumApiClient(config)
     try {
       operation(forum)
@@ -43,10 +43,15 @@ object DiscourseForumApiClient {
 
 
 /**
+  * @see [[com.brightercode.discourse.util.TypesafeConfigHelper]]
+  *
   * @param baseUrl e.g. https://se23.life
   * @param username to act as
   * @param key see https://[your forum]/admin/api/keys
   */
-case class DiscourseEndpointConfig(baseUrl: String, username: String, key: String, timeout: FiniteDuration) {
+case class DiscourseEndpointConfig(baseUrl: String,
+                                   username: String,
+                                   key: String,
+                                   timeout: FiniteDuration) {
   require(baseUrl != "https://your.discourse.forum", "Please customise application.conf before running")
 }
