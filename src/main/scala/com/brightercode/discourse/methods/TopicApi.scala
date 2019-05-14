@@ -17,25 +17,25 @@ import scala.concurrent.Future
 
 class TopicApi(api: DiscourseForumApiClient) extends LazyLogging {
 
-  def create(topic: TopicTemplate): Future[CreatedPost] =
+  def create(topic: TopicTemplate): Future[Unit] =
     api.url(s"posts.json")
       .post(toJson(topic))
-    .map(_.body[JsValue]).map { json =>
-      json.validate[CreatedPost].orElse {
-        json.validate[DiscourseException].orElse {
-          json.validate[TypedDiscourseException]
+      .map(_.body[JsValue]).map { json =>
+        json.validate[CreatedPost].orElse {
+          json.validate[DiscourseException].orElse {
+            json.validate[TypedDiscourseException]
+          }
+        } match {
+          case JsSuccess(value: CreatedPost, _) => value
+          case JsSuccess(value: DiscourseException, _) => sys.error(value.toString)
+          case JsSuccess(value: TypedDiscourseException, _) if value.errorType == "rate_limit" =>
+            logger.debug(Json.prettyPrint(json))
+            throw RateLimitException(value)
+          case JsSuccess(value: TypedDiscourseException, _) => sys.error(value.toString)
+          case JsSuccess(value, _) => sys.error(s"Unexpected when reading new topic: $value\nJSON: ${Json.prettyPrint(json)}")
+          case JsError(errors) => sys.error(s"Errors reading new topic: $errors\nJSON: ${Json.prettyPrint(json)}")
         }
-      } match {
-        case JsSuccess(value: CreatedPost, _) => value
-        case JsSuccess(value: DiscourseException, _) => sys.error(value.toString)
-        case JsSuccess(value: TypedDiscourseException, _) if value.errorType == "rate_limit" =>
-          logger.debug(json.toString())
-          throw RateLimitException(value)
-        case JsSuccess(value: TypedDiscourseException, _) => sys.error(value.toString)
-        case JsSuccess(value, _) => sys.error(s"Unexpected when reading new topic: $value")
-        case JsError(errors) => sys.error(s"Errors reading new topic: $errors\nJSON: $json")
       }
-    }
 
   def list(categorySlug: String,
            page: Int = 0,
@@ -55,7 +55,10 @@ class TopicApi(api: DiscourseForumApiClient) extends LazyLogging {
 
       json \ "topic_list" \ "topics" match {
         case JsDefined(array: JsArray) => array.value.map { obj =>
-          Topic.from(obj.validate[SparseTopic].get, usersById.apply)
+          obj.validate[SparseTopic] match {
+            case JsSuccess(value, _) => Topic.from(value, usersById.apply)
+            case JsError(errors) => sys.error(s"Errors reading user from topic list: $errors")
+          }
         }
         case _ => sys.error(s"Couldn't read topics from ${Json.prettyPrint(json)}")
       }

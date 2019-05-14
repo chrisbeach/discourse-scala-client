@@ -1,6 +1,6 @@
 package com.brightercode.discourse
 
-import com.brightercode.discourse.DiscourseForumApiClient.queryStringParams
+import com.brightercode.discourse.DiscourseForumApiClient.apiHeaders
 import com.brightercode.discourse.methods.{CategoryApi, PostApi, TopicApi}
 import com.brightercode.discourse.util.PlayWebServiceClient
 
@@ -13,7 +13,7 @@ import scala.concurrent.duration.FiniteDuration
   *
   */
 class DiscourseForumApiClient private (config: DiscourseEndpointConfig)
-  extends PlayWebServiceClient(config.baseUrl, queryStringParams(config.key, config.username)) {
+  extends PlayWebServiceClient(config.baseUrl, apiHeaders(config.key, config.username)) {
 
   val topics = new TopicApi(this)
   val posts = new PostApi(this)
@@ -21,10 +21,12 @@ class DiscourseForumApiClient private (config: DiscourseEndpointConfig)
 }
 
 object DiscourseForumApiClient {
-  private[discourse] def queryStringParams(apiKey: String, username: String) =
-    Map(
-      "api_key" -> apiKey,
-      "api_username" -> username,
+  private[discourse] def apiHeaders(apiKey: String, username: String) =
+    Seq(
+      "Api-Key" -> apiKey,
+      "Api-Username" -> username,
+      "Accept" -> "application/json",
+      "Content-Type" -> "application/json"
     )
 
   /**
