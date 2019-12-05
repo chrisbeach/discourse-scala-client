@@ -1,7 +1,8 @@
 package com.brightercode.discourse
 
+import akka.actor.ActorSystem
 import com.brightercode.discourse.DiscourseForumApiClient.apiHeaders
-import com.brightercode.discourse.methods.{CategoryApi, PostApi, TopicApi}
+import com.brightercode.discourse.api.{CategoryApi, PostApi, TopicApi}
 import com.brightercode.discourse.util.PlayWebServiceClient
 
 import scala.concurrent.duration.FiniteDuration
@@ -12,8 +13,8 @@ import scala.concurrent.duration.FiniteDuration
   * @see https://docs.discourse.org/
   *
   */
-class DiscourseForumApiClient private (config: DiscourseEndpointConfig)
-  extends PlayWebServiceClient(config.baseUrl, apiHeaders(config.key, config.username)) {
+class DiscourseForumApiClient private (config: DiscourseEndpointConfig, system: ActorSystem)
+  extends PlayWebServiceClient(config.baseUrl, system, apiHeaders(config.key, config.username)) {
 
   val topics = new TopicApi(this)
   val posts = new PostApi(this)
@@ -32,9 +33,9 @@ object DiscourseForumApiClient {
   /**
     * Provide a forum to caller and ensure it is shutdown when the caller finishes execution
     */
-  def withDiscourseForum[T](config: DiscourseEndpointConfig)
+  def withDiscourseForum[T](config: DiscourseEndpointConfig, system: ActorSystem)
                            (operation: DiscourseForumApiClient => T): T = {
-    val forum = new DiscourseForumApiClient(config)
+    val forum = new DiscourseForumApiClient(config, system)
     try {
       operation(forum)
     } finally {

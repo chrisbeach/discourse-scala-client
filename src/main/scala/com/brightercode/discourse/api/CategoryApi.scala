@@ -1,4 +1,4 @@
-package com.brightercode.discourse.methods
+package com.brightercode.discourse.api
 
 import com.brightercode.discourse.DiscourseForumApiClient
 import com.brightercode.discourse.model.Category

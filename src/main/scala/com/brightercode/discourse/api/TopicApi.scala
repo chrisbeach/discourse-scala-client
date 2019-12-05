@@ -1,4 +1,4 @@
-package com.brightercode.discourse.methods
+package com.brightercode.discourse.api
 
 import com.brightercode.discourse.DiscourseForumApiClient
 import com.brightercode.discourse.exceptions.{DiscourseException, RateLimitException, TypedDiscourseException}
@@ -17,7 +17,7 @@ import scala.concurrent.Future
 
 class TopicApi(api: DiscourseForumApiClient) extends LazyLogging {
 
-  def create(topic: TopicTemplate): Future[Unit] =
+  def create(topic: TopicTemplate): Future[CreatedPost] =
     api.url(s"posts.json")
       .post(toJson(topic))
       .map(_.body[JsValue]).map { json =>

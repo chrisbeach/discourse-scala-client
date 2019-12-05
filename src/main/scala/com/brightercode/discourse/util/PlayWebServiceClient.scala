@@ -11,12 +11,8 @@ import scala.concurrent.{ExecutionContext, Future}
   * @see https://github.com/playframework/play-ws
   */
 abstract class PlayWebServiceClient(urlBase: String,
+                                    implicit val system: ActorSystem,
                                     commonHeaders: Seq[(String, String)] = Seq.empty) {
-
-  private implicit val system: ActorSystem = ActorSystem()
-  system.registerOnTermination {
-    System.exit(0)
-  }
 
   private implicit val executionContext: ExecutionContext = system.dispatcher
 
@@ -28,8 +24,6 @@ abstract class PlayWebServiceClient(urlBase: String,
       .withHttpHeaders(commonHeaders: _*)
       .withQueryStringParameters(extraQueryParams.toSeq: _*)
 
-  def shutdown(): Future[Terminated] = {
+  def shutdown(): Unit =
     wsClient.close()
-    system.terminate()
-  }
 }
