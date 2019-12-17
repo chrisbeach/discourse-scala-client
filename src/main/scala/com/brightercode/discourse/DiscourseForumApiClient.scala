@@ -1,6 +1,7 @@
 package com.brightercode.discourse
 
 import akka.actor.ActorSystem
+import cats.effect.{Bracket, IO, Resource}
 import com.brightercode.discourse.DiscourseForumApiClient.apiHeaders
 import com.brightercode.discourse.api.{CategoryApi, PostApi, TopicApi}
 import com.brightercode.discourse.util.PlayWebServiceClient
@@ -42,6 +43,17 @@ object DiscourseForumApiClient {
       forum.shutdown()
     }
   }
+
+  /**
+   * Provide a forum to caller and ensure it is shutdown when the caller finishes execution
+   */
+  def discourseForumResource(config: DiscourseEndpointConfig,
+                             system: ActorSystem): Resource[IO, DiscourseForumApiClient] =
+    Resource.make(
+      IO(new DiscourseForumApiClient(config, system))
+    )(
+      forum => IO(forum.shutdown())
+    )
 }
 
 
