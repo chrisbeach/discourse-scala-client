@@ -1,6 +1,5 @@
 package com.brightercode.discourse.exceptions
 
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
